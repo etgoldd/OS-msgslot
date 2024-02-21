@@ -110,7 +110,7 @@ static ssize_t device_write( struct file*       file,
   if (buffer == NULL) {
     return -EINVAL;
   }
-  if (access_ok(buffer)) {
+  if (!access_ok(buffer)) {
     return -EFAULT;
   }
   return (buffer_lengths[index] = copy_from_user(message_buffers[(int)file->private_data], buffer, length)));
