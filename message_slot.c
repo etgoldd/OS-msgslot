@@ -23,16 +23,10 @@ MODULE_LICENSE("GPL");
 // Declarations for self.
 access_ok( buffer, length );
 
-
-// used to prevent concurent access into the same device
-static int dev_open_flag = 0;
-
 // The message the device will give when asked
 static unsigned int buffer_lengths[256];
 static char message_buffers[256][BUF_LEN];
 
-//Do we need to encrypt?
-static int encryption_flag = 0;
 
 //================== DEVICE FUNCTIONS ===========================
 static int device_open( struct inode* inode,
@@ -66,13 +60,12 @@ static ssize_t device_read( struct file* file,
   }
 
   // Checking if the relevant buffer has a message
-  unsigned int index = (int)file->private_data;
-  if (buffer_lengths[index] == 0) {
+  if (buffer_lengths[file->private_data] == 0) {
     return -EWOULDBLOCK;
   }
 
   // Validating that the buffer is long enough for the message.
-  if (length < buffer_lengths[index]) {
+  if (length < buffer_lengths[file->private_data]) {
     return -ENOSPC;
   }
 
@@ -84,7 +77,7 @@ static ssize_t device_read( struct file* file,
     return -EFAULT;
   }
   // Copying the message to the buffer.
-  if( copy_to_user( buffer, message_buffers[index], length ) == 0 ) {
+  if( copy_to_user( buffer, message_buffers[file->private_data], length ) == 0 ) {
     return length;
   }
   return -EINVAL;
