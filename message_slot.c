@@ -95,7 +95,7 @@ static ssize_t device_write( struct file*       file,
   if (file->private_data == NULL) {
     return -EINVAL;
   }
-  int index = (int)file->private_data;
+
   if (length > BUF_LEN || length == 0) {
     return -EMSGSIZE;
   }
@@ -106,7 +106,7 @@ static ssize_t device_write( struct file*       file,
   if (!access_ok(buffer)) {
     return -EFAULT;
   }
-  return (buffer_lengths[index] = copy_from_user(message_buffers[(int)file->private_data], buffer, length)));
+  return (buffer_lengths[file->private_data] = copy_from_user(message_buffers[file->private_data], buffer, length)));
 }
 
 //----------------------------------------------------------------
