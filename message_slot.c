@@ -39,7 +39,7 @@ static int device_open( struct inode* inode,
                         struct file*  file )
 {
   printk("Invoking device_open(%p)\n", file);
-  file->private_data = iminor(inode);
+  file->private_data = (void*)iminor(inode);
 
   return SUCCESS;
 }
@@ -91,7 +91,7 @@ static ssize_t device_read( struct file* file,
 }
 
 //---------------------------------------------------------------
-// a processs which has already opened
+// a process which has already opened
 // the device file attempts to write to it
 static ssize_t device_write( struct file*       file,
                              const char __user* buffer,
