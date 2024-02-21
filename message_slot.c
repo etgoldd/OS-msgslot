@@ -106,7 +106,7 @@ static ssize_t device_write( struct file*       file,
   if (!access_ok(buffer)) {
     return -EFAULT;
   }
-  return (buffer_lengths[file->private_data] = copy_from_user(message_buffers[file->private_data], buffer, length)));
+  return (buffer_lengths[file->private_data] = copy_from_user(message_buffers[file->private_data], buffer, length));
 }
 
 //----------------------------------------------------------------
