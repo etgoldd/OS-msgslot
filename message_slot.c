@@ -19,10 +19,6 @@ MODULE_LICENSE("GPL");
 //Our custom definitions of IOCTL operations
 #include "message_slot.h"
 
-struct chardev_info {
-  spinlock_t lock;
-};
-
 // used to prevent concurent access into the same device
 static int dev_open_flag = 0;
 
