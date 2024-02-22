@@ -24,8 +24,6 @@ int main(int argc, char *argv[])
 
   ret_val = ioctl(file_desc, MSG_SLOT_CHANNEL, atoi(argv[2]));
   ret_val = write(file_desc, argv[3], strlen(argv[3]) );
-//  ret_val = remove("/dev/"DEVICE_FILE_NAME);
-
   close(file_desc);
   return 0;
 }
