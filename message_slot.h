@@ -8,7 +8,7 @@
 // any more. We want ioctls to know this
 // number at compile time.
 //#define MAJOR_NUM 244
-#define MAJOR_NUM 255
+#define MAJOR_NUM 235
 
 
 // Set the message of the device driver
