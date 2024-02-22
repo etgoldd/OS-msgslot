@@ -135,22 +135,27 @@ static ssize_t device_write( struct file*       file,
   printk("Invoking device_write(%p)\n", file);
   // Checking if a channel has been set
   if (channel->channel.channel_id == 0) {
+    printk("No channel has been set\n");
     return -EINVAL;
   }
   // Checking the message length
   if (length > BUF_LEN || length == 0) {
+    printk("Invalid message length\n");
     return -EMSGSIZE;
   }
   // Checking the buffer validity
   if (buffer == NULL) {
+    printk("Invalid buffer\n")
     return -EINVAL;
   }
   if (!access_ok(buffer, length)) {
+    printk("Invalid buffer access\n");
     return -EFAULT;
   }
 
   // Copying the message to the buffer
   if (copy_from_user(channel->channel.message, buffer, length) == 0) {
+    printk("Failed to copy message from user\n");
     return -EINVAL;
   }
   channel->channel.message_length = length;
