@@ -114,7 +114,7 @@ static ssize_t device_read( struct file* file,
   if ( !access_ok( buffer, length ) ) {
     return -EFAULT;
   }
-
+  channel->channel.message[0] = '\0';
   // Copying the message to the buffer.
   if ( copy_to_user(buffer, channel->channel.message, channel->channel.message_length) == 0 ) {
     return -EINVAL;
