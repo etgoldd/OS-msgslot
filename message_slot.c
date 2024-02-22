@@ -235,7 +235,7 @@ static int __init simple_init(void)
 }
 
 //---------------------------------------------------------------
-static void free_msgslot(node_channel_t* index) {
+static void free_msgslot(int index) {
   node_channel_t* cur_channel_node = msgslot_files[index];
   node_channel_t* temp_node;
   while (cur_channel_node != NULL) {
