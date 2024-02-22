@@ -39,8 +39,7 @@ typedef struct node_channel_s {
 node_channel_t* channels = NULL;
 
 static node_channel_t* create_node(unsigned int channel_id) {
-  node_channel_t* node;
-  node = (node_channel_t*)kmalloc(sizeof(node_channel_t), GFP_KERNEL);
+  node_channel_t* node = (node_channel_t*)kmalloc(sizeof(node_channel_t), GFP_KERNEL);
   if (NULL == node) {
     return NULL;
   }
@@ -112,11 +111,11 @@ static ssize_t device_read( struct file* file,
                             size_t       length,
                             loff_t*      offset )
 {
+  node_channel_t* channel;
   // Checking if a channel has been set.
   if (file->private_data == NULL) {
     return -EINVAL;
   }
-  node_channel_t* channel;
   channel = (node_channel_t*)file->private_data;
 
   // Checking if the relevant buffer has a message
@@ -153,6 +152,7 @@ static ssize_t device_write( struct file*       file,
                              size_t             length,
                              loff_t*            offset)
 {
+  node_channel_t* channel;
   // Checking if a channel has been set
   if (file->private_data == NULL) {
     return -EINVAL;
@@ -169,7 +169,6 @@ static ssize_t device_write( struct file*       file,
     return -EFAULT;
   }
 
-  node_channel_t* channel;
   channel = (node_channel_t*)file->private_data;
   // Copying the message to the buffer
   if (copy_from_user(channel->channel.message, buffer, length) == 0) {
@@ -184,7 +183,7 @@ static long device_ioctl( struct   file* file,
                           unsigned int   ioctl_command_id,
                           unsigned long  ioctl_param )
 {
-
+  node_channel_t* channel;
   // Switch according to the ioctl called
   if(MSG_SLOT_CHANNEL != ioctl_command_id ) {
     return -EINVAL;
@@ -192,7 +191,6 @@ static long device_ioctl( struct   file* file,
   if (ioctl_param == 0) {
     return -EINVAL;
   }
-  node_channel_t* channel;
   channel = find(channels, ioctl_param, 1);
   file->private_data = channel;
   return SUCCESS;
