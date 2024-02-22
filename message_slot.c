@@ -76,7 +76,6 @@ static int device_release( struct inode* inode,
   int minor_num;
   node_channel_t* next_channel;
   node_channel_t* channel;
-  printk("Invoking device_release(%p,%p)\n", inode, file);
   minor_num = iminor(inode);
   channel = msgslot_files[minor_num]->next;
   while (NULL != channel) {
@@ -97,7 +96,6 @@ static ssize_t device_read( struct file* file,
                             loff_t*      offset )
 {
   node_channel_t* channel = (node_channel_t*)file->private_data;
-  printk("Invoking device read(%p)\n", file);
   // Checking if a channel has been set.
   if (channel->channel.channel_id == 0) {
     printk("No channel has been set\n");
@@ -109,32 +107,26 @@ static ssize_t device_read( struct file* file,
     printk("No message in the buffer\n");
     return -EWOULDBLOCK;
   }
-  printk("Message in the buffer\n");
 
   // Validating that the buffer is long enough for the message.
   if (length < channel->channel.message_length) {
     printk("Buffer too short\n");
     return -ENOSPC;
   }
-
-  printk("Buffer long enough\n");
   // Checking buffer validity.
   if( buffer == NULL ) {
     printk("Invalid buffer\n");
     return -EINVAL;
   }
-  printk("Valid buffer\n");
   if ( !access_ok( buffer, length ) ) {
     printk("Invalid buffer access\n");
     return -EFAULT;
   }
-  printk("Valid buffer access\n");
   // Copying the message to the buffer.
   if ( copy_to_user(buffer, channel->channel.message, channel->channel.message_length) != 0 ) {
     printk("Failed to copy message to user\n");
     return -EINVAL;
   }
-  printk("Copied message to user\n");
 
   return length;
 }
@@ -218,7 +210,6 @@ struct file_operations Fops = {
   .write          = device_write,
   .open           = device_open,
   .unlocked_ioctl = device_ioctl,
-  .release        = device_release,
 };
 
 //---------------------------------------------------------------
@@ -244,9 +235,23 @@ static int __init simple_init(void)
 }
 
 //---------------------------------------------------------------
+static void free_msgslot(node_channel_t* channel_head) {
+  node_channel_t* cur_channel_node = msgslot_files[index];
+  node_channel_t* temp_node;
+  while (cur_channel_node != NULL) {
+    temp_node = cur_channel_node;
+    cur_channel_node = cur_channel_node->next;
+    kfree(temp_node);
+  }
+}
+
 static void __exit simple_cleanup(void)
 {
   // Unregister the device
+  int i;
+  for (i = 0; i < 257; i++) {
+    free_msgslot(index);
+  }
   // Should always succeed
   unregister_chrdev(MAJOR_NUM, DEVICE_RANGE_NAME);
 }
