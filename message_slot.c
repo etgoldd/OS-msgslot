@@ -147,7 +147,7 @@ static ssize_t device_write( struct file*       file,
   printk("Valid message length\n");
   // Checking the buffer validity
   if (buffer == NULL) {
-    printk("Invalid buffer\n")
+    printk("Invalid buffer\n");
     return -EINVAL;
   }
   printk("Valid buffer\n");
