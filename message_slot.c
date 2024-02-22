@@ -91,7 +91,7 @@ static ssize_t device_read( struct file* file,
                             loff_t*      offset )
 {
   node_channel_t* channel = (node_channel_t*)file->private_data;
-  prink("Invoking device read(%p)\n", file);
+  printk("Invoking device read(%p)\n", file);
   // Checking if a channel has been set.
   if (channel->channel.channel_id == 0) {
     return -EINVAL;
@@ -164,7 +164,7 @@ static long device_ioctl( struct   file* file,
 {
   int minor_num = iminor(file->f_inode);
   node_channel_t* channel;
-  printk("Invoking ioctl, requesting channel: %d\n", ioctl_param);
+  printk("Invoking ioctl, requesting channel: %ld\n", ioctl_param);
   // Switch according to the ioctl called
   if(MSG_SLOT_CHANNEL != ioctl_command_id ) {
     return -EINVAL;
