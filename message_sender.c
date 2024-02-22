@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     perror("Error setting channel \n");
     exit(-1);
   }
-
+  write(1, argv[3], strlen(argv[3]) ); // write to stdout (file descriptor 1)
   ret_val = write(file_desc, argv[3], strlen(argv[3]) );
 
   if (ret_val < 0) {
