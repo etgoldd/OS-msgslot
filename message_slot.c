@@ -45,7 +45,6 @@ static node_channel_t* find(node_channel_t* root, unsigned int channel_id, int c
     }
     return root;
   }
-  printk("Finding channel: %d\n", channel_id);
   while (NULL != root->next && root->channel.channel_id != channel_id) {
     root = root->next;
   }
@@ -63,7 +62,6 @@ static int device_open( struct inode* inode,
                         struct file*  file )
 {
   int minor_num = iminor(inode);
-  printk("Invoking device_open(%p)\n", file);
   file->private_data = msgslot_files[minor_num];
   // default channel is invalid channel 0.
   return SUCCESS;
@@ -140,37 +138,31 @@ static ssize_t device_write( struct file*       file,
                              loff_t*            offset)
 {
   node_channel_t* channel = (node_channel_t*)file->private_data;
-  printk("Invoking device_write(%p)\n", file);
   // Checking if a channel has been set
   if (channel->channel.channel_id == 0) {
     printk("No channel has been set\n");
     return -EINVAL;
   }
-  printk("Valid channel\n");
   // Checking the message length
   if (length > BUF_LEN || length == 0) {
     printk("Invalid message length\n");
     return -EMSGSIZE;
   }
-  printk("Valid message length\n");
   // Checking the buffer validity
   if (buffer == NULL) {
     printk("Invalid buffer\n");
     return -EINVAL;
   }
-  printk("Valid buffer\n");
   if (!access_ok(buffer, length)) {
     printk("Invalid buffer access\n");
     return -EFAULT;
   }
-  printk("Valid buffer access\n");
 
   // Copying the message to the buffer
   if (copy_from_user(channel->channel.message, buffer, length) != 0) {
     printk("Failed to copy message from user\n");
     return -EINVAL;
   }
-  printk("Copied message from user\n");
   channel->channel.message_length = length;
   return length;
 }
@@ -182,9 +174,7 @@ static long device_ioctl( struct   file* file,
 {
   int minor_num;
   node_channel_t* channel;
-  printk("Invoking ioctl(%p)\n", file);
   minor_num = iminor(file->f_inode);
-  printk("Invoking ioctl, requesting channel: %ld\n", ioctl_param);
   // Switch according to the ioctl called
   if(MSG_SLOT_CHANNEL != ioctl_command_id ) {
     printk("Invalid ioctl command\n");
@@ -194,7 +184,6 @@ static long device_ioctl( struct   file* file,
     printk("Invalid channel\n");
     return -EINVAL;
   }
-  printk("Valid channel\n");
   channel = find(msgslot_files[minor_num], ioctl_param, FIND_CREAT);
   file->private_data = channel;
   return SUCCESS;
@@ -219,7 +208,7 @@ static int __init simple_init(void)
   int rc = -1;
   int i;
   // Register driver capabilities. Obtain major num
-  rc = register_chrdev( MAJOR_NUM, DEVICE_RANGE_NAME, &Fops );
+  rc = register_chrdev( MAJOR_NUM, DEVICE_FILE_NAME, &Fops );
 
   for (i = 0; i < 257; i++) {
     msgslot_files[i] = create_node(0);
@@ -253,7 +242,7 @@ static void __exit simple_cleanup(void)
     free_msgslot(i);
   }
   // Should always succeed
-  unregister_chrdev(MAJOR_NUM, DEVICE_RANGE_NAME);
+  unregister_chrdev(MAJOR_NUM, DEVICE_FILE_NAME);
 }
 
 //---------------------------------------------------------------
