@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     perror("Can't open device file: "DEVICE_FILE_NAME"\n");
     exit(-1);
   }
-
+  printf("going to try ioctl file_desc: %d\n", file_desc);
   ret_val = ioctl(file_desc, MSG_SLOT_CHANNEL, atoi(argv[2]));
 
   if (ret_val < 0) {

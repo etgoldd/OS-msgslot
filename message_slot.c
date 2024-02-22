@@ -39,10 +39,13 @@ static node_channel_t* find(node_channel_t* root, unsigned int channel_id, int c
   if (NULL == root) {
     if (create) {
       root = create_node(channel_id);
+      if (NULL == root) {
+        printk("Failed to create node\n");
+      }
     }
     return root;
   }
-
+  printk("Finding channel: %d\n", channel_id);
   while (NULL != root->next && root->channel.channel_id != channel_id) {
     root = root->next;
   }
@@ -181,16 +184,20 @@ static long device_ioctl( struct   file* file,
                           unsigned int   ioctl_command_id,
                           unsigned long  ioctl_param )
 {
+  printk("Invoking ioctl(%p)\n", file);
   int minor_num = iminor(file->f_inode);
   node_channel_t* channel;
   printk("Invoking ioctl, requesting channel: %ld\n", ioctl_param);
   // Switch according to the ioctl called
   if(MSG_SLOT_CHANNEL != ioctl_command_id ) {
+    printk("Invalid ioctl command\n");
     return -EINVAL;
   }
   if (ioctl_param == 0) {
+    printk("Invalid channel\n");
     return -EINVAL;
   }
+  printk("Valid channel\n");
   channel = find(msgslot_files[minor_num], ioctl_param, FIND_CREAT);
   file->private_data = channel;
   return SUCCESS;
