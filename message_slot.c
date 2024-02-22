@@ -63,7 +63,6 @@ static int device_open( struct inode* inode,
   printk("Invoking device_open(%p)\n", file);
   file->private_data = msgslot_files[minor_num];
   // default channel is invalid channel 0.
-  MOD_INC_USE_COUNT;
   return SUCCESS;
 }
 
@@ -80,7 +79,6 @@ static int device_release( struct inode* inode,
     channel = next_channel;
   }
   file->private_data = NULL;
-  MOD_DEC_USE_COUNT;
   return SUCCESS;
 }
 
