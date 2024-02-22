@@ -13,7 +13,7 @@
 #include <linux/fs.h>       /* for register_chrdev */
 #include <linux/uaccess.h>  /* for get_user and put_user */
 #include <linux/string.h>   /* for memset. NOTE - not string.h!*/
-
+#include <linux/slab.h>     /* for kmalloc */
 MODULE_LICENSE("GPL");
 
 //Our custom definitions of IOCTL operations
@@ -22,19 +22,6 @@ MODULE_LICENSE("GPL");
 
 //================== DATA STRUCTURES ============================
 
-// Channel structure
-typedef struct channel_s {
-  unsigned int channel_id;
-  char message[BUF_LEN];
-  unsigned int message_length;
-} channel_t;
-
-// Channel data structure
-typedef struct node_channel_s {
-  channel_t channel;
-  struct node_channel_s* left;
-  struct node_channel_s* right;
-} node_channel_t;
 
 node_channel_t* channels = NULL;
 

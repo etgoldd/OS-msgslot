@@ -10,6 +10,7 @@
 //#define MAJOR_NUM 244
 #define MAJOR_NUM 255
 
+
 // Set the message of the device driver
 #define MSG_SLOT_CHANNEL _IOW(MAJOR_NUM, 0, unsigned long)
 
@@ -18,5 +19,19 @@
 #define DEVICE_FILE_NAME "simple_char_dev"
 #define SUCCESS 0
 #define FIND_CREAT 1
+
+// Channel structure
+typedef struct channel_s {
+  unsigned int channel_id;
+  char message[BUF_LEN];
+  unsigned int message_length;
+} channel_t;
+
+// Channel data structure
+typedef struct node_channel_s {
+  channel_t channel;
+  struct node_channel_s* left;
+  struct node_channel_s* right;
+} node_channel_t;
 
 #endif
