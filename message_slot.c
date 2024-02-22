@@ -73,9 +73,12 @@ static int device_open( struct inode* inode,
 static int device_release( struct inode* inode,
                            struct file*  file)
 {
-  int minor_num = iminor(inode);
-  node_channel_t* channel = msgslot_files[minor_num]->next;
+  int minor_num;
   node_channel_t* next_channel;
+  node_channel_t* channel;
+  printk("Invoking device_release(%p,%p)\n", inode, file);
+  minor_num = iminor(inode);
+  channel = msgslot_files[minor_num]->next;
   while (NULL != channel) {
     next_channel = channel->next;
     kfree(channel);
@@ -113,6 +116,7 @@ static ssize_t device_read( struct file* file,
     printk("Buffer too short\n");
     return -ENOSPC;
   }
+
   printk("Buffer long enough\n");
   // Checking buffer validity.
   if( buffer == NULL ) {
