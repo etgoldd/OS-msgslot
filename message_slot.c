@@ -67,23 +67,6 @@ static int device_open( struct inode* inode,
   return SUCCESS;
 }
 
-//---------------------------------------------------------------
-static int device_release( struct inode* inode,
-                           struct file*  file)
-{
-  int minor_num;
-  node_channel_t* next_channel;
-  node_channel_t* channel;
-  minor_num = iminor(inode);
-  channel = msgslot_files[minor_num]->next;
-  while (NULL != channel) {
-    next_channel = channel->next;
-    kfree(channel);
-    channel = next_channel;
-  }
-  file->private_data = NULL;
-  return SUCCESS;
-}
 
 //---------------------------------------------------------------
 // a process which has already opened
