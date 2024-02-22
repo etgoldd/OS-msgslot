@@ -21,7 +21,7 @@ MODULE_LICENSE("GPL");
 #include "message_slot.h"
 
 // Declarations for self.
-access_ok( buffer, length );
+//access_ok( buffer, length );
 
 // The message the device will give when asked
 static unsigned int buffer_lengths[256];
