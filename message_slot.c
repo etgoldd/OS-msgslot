@@ -185,9 +185,9 @@ static long device_ioctl( struct   file* file,
                           unsigned long  ioctl_param )
 {
   int minor_num;
+  node_channel_t* channel;
   printk("Invoking ioctl(%p)\n", file);
   minor_num = iminor(file->f_inode);
-  node_channel_t* channel;
   printk("Invoking ioctl, requesting channel: %ld\n", ioctl_param);
   // Switch according to the ioctl called
   if(MSG_SLOT_CHANNEL != ioctl_command_id ) {
