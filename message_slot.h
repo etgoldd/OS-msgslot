@@ -30,8 +30,7 @@ typedef struct channel_s {
 // Channel data structure
 typedef struct node_channel_s {
   channel_t channel;
-  struct node_channel_s* left;
-  struct node_channel_s* right;
+  struct node_channel_s* next;
 } node_channel_t;
 
 #endif

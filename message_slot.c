@@ -22,8 +22,7 @@ MODULE_LICENSE("GPL");
 
 //================== DATA STRUCTURES ============================
 
-
-node_channel_t* channels = NULL;
+static node_channel_t* msgslot_files[257];
 
 static node_channel_t* create_node(unsigned int channel_id) {
   node_channel_t* node = (node_channel_t*)kmalloc(sizeof(node_channel_t), GFP_KERNEL);
@@ -32,53 +31,38 @@ static node_channel_t* create_node(unsigned int channel_id) {
   }
   node->channel.channel_id = channel_id;
   node->channel.message_length = 0;
-  node->left = NULL;
-  node->right = NULL;
+  node->next = NULL;
   return node;
 }
 
 static node_channel_t* find(node_channel_t* root, unsigned int channel_id, int create) {
   if (NULL == root) {
-    return NULL;
+    if (create) {
+      root = create_node(channel_id);
+    }
+    return root;
+  }
+
+  while (NULL != root->next && root->channel.channel_id != channel_id) {
+    root = root->next;
   }
   if (root->channel.channel_id == channel_id) {
     return root;
   }
-
-  if (root->channel.channel_id > channel_id) {
-    if (NULL == root->left) {
-      if (create) {
-        root->left = create_node(channel_id);
-        if (NULL == root->left) {
-          return NULL;
-        }
-        return root->left;
-      }
-      return NULL;
-    }
+  if (create) {
+    root->next = create_node(channel_id);
   }
-  else {
-    if (NULL == root->right) {
-      if (create) {
-        root->right = create_node(channel_id);
-        if (NULL == root->right) {
-          return NULL;
-        }
-        return root->right;
-      }
-      return NULL;
-    }
-  }
-  return find(root->channel.channel_id > channel_id ? root->left : root->right, channel_id, create);
+  return root->next;
 }
 
 //================== DEVICE FUNCTIONS ===========================
 static int device_open( struct inode* inode,
                         struct file*  file )
 {
+  int minor_num = iminor(inode);
   printk("Invoking device_open(%p)\n", file);
-  // We have 2^20 channels, but only 256 devices
-  file->private_data = NULL;
+  file->private_data = msgslot_files[minor_num];
+  // default channel is invalid channel 0.
   return SUCCESS;
 }
 
@@ -86,6 +70,14 @@ static int device_open( struct inode* inode,
 static int device_release( struct inode* inode,
                            struct file*  file)
 {
+  int minor_num = iminor(inode);
+  node_channel_t* channel = msgslot_files[minor_num]->next;
+  node_channel_t* next_channel;
+  while (NULL != channel) {
+    next_channel = channel->next;
+    kfree(channel);
+    channel = next_channel;
+  }
   file->private_data = NULL;
   return SUCCESS;
 }
@@ -98,12 +90,12 @@ static ssize_t device_read( struct file* file,
                             size_t       length,
                             loff_t*      offset )
 {
-  node_channel_t* channel;
+  node_channel_t* channel = (node_channel_t*)file->private_data;
+  prink("Invoking device read(%p)\n", file);
   // Checking if a channel has been set.
-  if (file->private_data == NULL) {
+  if (channel->channel.channel_id == 0) {
     return -EINVAL;
   }
-  channel = (node_channel_t*)file->private_data;
 
   // Checking if the relevant buffer has a message
   if (channel->channel.message_length == 0) {
@@ -124,7 +116,7 @@ static ssize_t device_read( struct file* file,
   }
 
   // Copying the message to the buffer.
-  if (copy_to_user(buffer, channel->channel.message, channel->channel.message_length) == 0) {
+  if ( copy_to_user(buffer, channel->channel.message, channel->channel.message_length) == 0 ) {
     return -EINVAL;
   }
 
@@ -139,9 +131,10 @@ static ssize_t device_write( struct file*       file,
                              size_t             length,
                              loff_t*            offset)
 {
-  node_channel_t* channel;
+  node_channel_t* channel = (node_channel_t*)file->private_data;
+  printk("Invoking device_write(%p)\n", file);
   // Checking if a channel has been set
-  if (file->private_data == NULL) {
+  if (channel->channel.channel_id == 0) {
     return -EINVAL;
   }
   // Checking the message length
@@ -156,7 +149,6 @@ static ssize_t device_write( struct file*       file,
     return -EFAULT;
   }
 
-  channel = (node_channel_t*)file->private_data;
   // Copying the message to the buffer
   if (copy_from_user(channel->channel.message, buffer, length) == 0) {
     return -EINVAL;
@@ -171,6 +163,7 @@ static long device_ioctl( struct   file* file,
                           unsigned long  ioctl_param )
 {
   node_channel_t* channel;
+  printk("Invoking ioctl, requesting channel: %d\n", ioctl_param);
   // Switch according to the ioctl called
   if(MSG_SLOT_CHANNEL != ioctl_command_id ) {
     return -EINVAL;
@@ -178,7 +171,7 @@ static long device_ioctl( struct   file* file,
   if (ioctl_param == 0) {
     return -EINVAL;
   }
-  channel = find(channels, ioctl_param, 1);
+  channel = find(channels, ioctl_param, FIND_CREAT);
   file->private_data = channel;
   return SUCCESS;
 }
@@ -201,10 +194,13 @@ struct file_operations Fops = {
 static int __init simple_init(void)
 {
   int rc = -1;
-
+  int i;
   // Register driver capabilities. Obtain major num
   rc = register_chrdev( MAJOR_NUM, DEVICE_RANGE_NAME, &Fops );
 
+  for (i = 0; i < 257; i++) {
+    msgslot_files[i] = create_node(0);
+  }
   // Negative values signify an error
   if( rc < 0 ) {
     printk( KERN_ALERT "%s registraion failed for  %d\n",
