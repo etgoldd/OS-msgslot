@@ -23,7 +23,19 @@ int main(int argc, char *argv[])
   }
 
   ret_val = ioctl(file_desc, MSG_SLOT_CHANNEL, atoi(argv[2]));
+
+  if (ret_val < 0) {
+    perror("Error setting channel \n");
+    exit(-1);
+  }
+
   ret_val = write(file_desc, argv[3], strlen(argv[3]) );
+
+  if (ret_val < 0) {
+    perror("Error writing to device file: "DEVICE_FILE_NAME"\n");
+    exit(-1);
+  }
+
   close(file_desc);
   return 0;
 }

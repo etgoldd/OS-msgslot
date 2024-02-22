@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
   ret_val = ioctl(file_desc, MSG_SLOT_CHANNEL, atoi(argv[2]));
 
   if (ret_val < 0) {
-    perror("Error setting channel: \n");
+    perror("Error setting channel \n");
     exit(-1);
   }
 
