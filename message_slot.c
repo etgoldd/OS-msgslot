@@ -8,7 +8,6 @@
 #define MODULE
 
 
-
 #include <linux/kernel.h>   /* We're doing kernel work */
 #include <linux/module.h>   /* Specifically, a module */
 #include <linux/fs.h>       /* for register_chrdev */
@@ -20,21 +19,79 @@ MODULE_LICENSE("GPL");
 //Our custom definitions of IOCTL operations
 #include "message_slot.h"
 
-// Declarations for self.
-//access_ok( buffer, length );
 
-// The message the device will give when asked
-static unsigned int buffer_lengths[256];
-static char message_buffers[256][BUF_LEN];
+//================== DATA STRUCTURES ============================
 
+// Channel structure
+typedef struct channel_s {
+  unsigned int channel_id;
+  char message[BUF_LEN];
+  unsigned int message_length;
+} channel_t;
+
+// Channel data structure
+typedef struct node_channel_s {
+  channel_t channel;
+  struct node_channel_s* left;
+  struct node_channel_s* right;
+} node_channel_t;
+
+node_channel_t* channels = NULL;
+
+static node_channel_t* create_node(unsigned int channel_id) {
+  node_channel_t* node = (node_channel_t*)kmalloc(sizeof(node_channel_t), GFP_KERNEL);
+  if (NULL == node) {
+    return NULL;
+  }
+  node->channel.channel_id = channel_id;
+  node->channel.message_length = 0;
+  node->left = NULL;
+  node->right = NULL;
+  return node;
+}
+
+static node_channel_t* find(node_channel_t* root, unsigned int channel_id, int create) {
+  if (NULL == root) {
+    return NULL;
+  }
+  if (root->channel.channel_id == channel_id) {
+    return root;
+  }
+
+  if (root->channel.channel_id > channel_id) {
+    if (NULL == root->left) {
+      if (create) {
+        root->left = create_node(channel_id);
+        if (NULL == root->left) {
+          return NULL;
+        }
+        return root->left;
+      }
+      return NULL;
+    }
+  }
+  else {
+    if (NULL == root->right) {
+      if (create) {
+        root->right = create_node(channel_id);
+        if (NULL == root->right) {
+          return NULL;
+        }
+        return root->right;
+      }
+      return NULL;
+    }
+  }
+  return find(root->channel.channel_id > channel_id ? root->left : root->right, channel_id, create);
+}
 
 //================== DEVICE FUNCTIONS ===========================
 static int device_open( struct inode* inode,
                         struct file*  file )
 {
   printk("Invoking device_open(%p)\n", file);
-  file->private_data = (void*)iminor(inode);
-
+  // We have 2^20 channels, but only 256 devices
+  file->private_data = NULL;
   return SUCCESS;
 }
 
@@ -58,14 +115,15 @@ static ssize_t device_read( struct file* file,
   if (file->private_data == NULL) {
     return -EINVAL;
   }
+  node_channel_t* channel = (node_channel_t*)file->private_data;
 
   // Checking if the relevant buffer has a message
-  if (buffer_lengths[file->private_data] == 0) {
+  if (channel->channel.message_length == 0) {
     return -EWOULDBLOCK;
   }
 
   // Validating that the buffer is long enough for the message.
-  if (length < buffer_lengths[file->private_data]) {
+  if (length < channel->channel.message_length) {
     return -ENOSPC;
   }
 
@@ -76,11 +134,13 @@ static ssize_t device_read( struct file* file,
   if ( !access_ok( buffer, length ) ) {
     return -EFAULT;
   }
+
   // Copying the message to the buffer.
-  if( copy_to_user( buffer, message_buffers[file->private_data], length ) == 0 ) {
-    return length;
+  if (copy_to_user(buffer, channel->channel.message, channel->channel.message_length) == 0) {
+    return -EINVAL;
   }
-  return -EINVAL;
+
+  return length;
 }
 
 //---------------------------------------------------------------
@@ -95,7 +155,7 @@ static ssize_t device_write( struct file*       file,
   if (file->private_data == NULL) {
     return -EINVAL;
   }
-
+  // Checking the message length
   if (length > BUF_LEN || length == 0) {
     return -EMSGSIZE;
   }
@@ -103,10 +163,17 @@ static ssize_t device_write( struct file*       file,
   if (buffer == NULL) {
     return -EINVAL;
   }
-  if (!access_ok(buffer)) {
+  if (!access_ok(buffer, length)) {
     return -EFAULT;
   }
-  return (buffer_lengths[file->private_data] = copy_from_user(message_buffers[file->private_data], buffer, length));
+
+  node_channel_t* channel = (node_channel_t*)file->private_data;
+  // Copying the message to the buffer
+  if (copy_from_user(channel->channel.message, buffer, length) == 0) {
+    return -EINVAL;
+  }
+  channel->channel.message_length = length;
+  return length;
 }
 
 //----------------------------------------------------------------
@@ -116,14 +183,14 @@ static long device_ioctl( struct   file* file,
 {
 
   // Switch according to the ioctl called
-  if(IOCTL_SET_CHNL != ioctl_command_id ) {
-    return SUCCESS;
-    // Get the parameter given to ioctl by the process
-  }
-  if (ioctl_param > 255) {
+  if(MSG_SLOT_CHANNEL != ioctl_command_id ) {
     return -EINVAL;
   }
-  file->private_data = ioctl_param;
+  if (ioctl_param == 0) {
+    return -EINVAL;
+  }
+  node_channel_t* channel = find(channels, ioctl_param, 1);
+  file->private_data = channel;
   return SUCCESS;
 }
 
