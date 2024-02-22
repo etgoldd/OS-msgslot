@@ -162,6 +162,7 @@ static long device_ioctl( struct   file* file,
                           unsigned int   ioctl_command_id,
                           unsigned long  ioctl_param )
 {
+  int minor_num = iminor(file->f_inode);
   node_channel_t* channel;
   printk("Invoking ioctl, requesting channel: %d\n", ioctl_param);
   // Switch according to the ioctl called
@@ -171,7 +172,7 @@ static long device_ioctl( struct   file* file,
   if (ioctl_param == 0) {
     return -EINVAL;
   }
-  channel = find(channels, ioctl_param, FIND_CREAT);
+  channel = find(msgslot_files[minor_num], ioctl_param, FIND_CREAT);
   file->private_data = channel;
   return SUCCESS;
 }
