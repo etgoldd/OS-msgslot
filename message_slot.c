@@ -128,7 +128,7 @@ static ssize_t device_read( struct file* file,
     return -EINVAL;
   }
 
-  return length;
+  return channel->channel.message_length;
 }
 
 //---------------------------------------------------------------

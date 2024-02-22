@@ -37,7 +37,8 @@ int main(int argc, char *argv[])
     perror("Error reading from device file: "DEVICE_FILE_NAME"\n");
     exit(-1);
   }
-  write(1, buf, ret_val); // write to stdout (file descriptor 1)
   close(file_desc);
+  
+  write(1, buf, ret_val); // write to stdout (file descriptor 1)
   return 0;
 }
