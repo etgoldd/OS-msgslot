@@ -94,30 +94,40 @@ static ssize_t device_read( struct file* file,
   printk("Invoking device read(%p)\n", file);
   // Checking if a channel has been set.
   if (channel->channel.channel_id == 0) {
+    printk("No channel has been set\n");
     return -EINVAL;
   }
 
   // Checking if the relevant buffer has a message
   if (channel->channel.message_length == 0) {
+    printk("No message in the buffer\n");
     return -EWOULDBLOCK;
   }
+  printk("Message in the buffer\n");
 
   // Validating that the buffer is long enough for the message.
   if (length < channel->channel.message_length) {
+    printk("Buffer too short\n");
     return -ENOSPC;
   }
-
+  printk("Buffer long enough\n");
   // Checking buffer validity.
   if( buffer == NULL ) {
+    printk("Invalid buffer\n");
     return -EINVAL;
   }
+  printk("Valid buffer\n");
   if ( !access_ok( buffer, length ) ) {
+    printk("Invalid buffer access\n");
     return -EFAULT;
   }
+  printk("Valid buffer access\n");
   // Copying the message to the buffer.
   if ( copy_to_user(buffer, channel->channel.message, channel->channel.message_length) != 0 ) {
+    printk("Failed to copy message to user\n");
     return -EINVAL;
   }
+  printk("Copied message to user\n");
 
   return length;
 }
@@ -156,7 +166,6 @@ static ssize_t device_write( struct file*       file,
   }
   printk("Valid buffer access\n");
 
-  channel->channel.message[0] = '\0';
   // Copying the message to the buffer
   if (copy_from_user(channel->channel.message, buffer, length) != 0) {
     printk("Failed to copy message from user\n");
