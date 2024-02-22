@@ -36,7 +36,6 @@ int main(int argc, char *argv[])
     exit(-1);
   }
 
-  printf("closing, Wrote %d bytes\n", ret_val);
   close(file_desc);
   return 0;
 }
