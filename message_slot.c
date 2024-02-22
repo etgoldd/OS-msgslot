@@ -235,7 +235,7 @@ static int __init simple_init(void)
 }
 
 //---------------------------------------------------------------
-static void free_msgslot(node_channel_t* channel_head) {
+static void free_msgslot(node_channel_t* index) {
   node_channel_t* cur_channel_node = msgslot_files[index];
   node_channel_t* temp_node;
   while (cur_channel_node != NULL) {
@@ -250,7 +250,7 @@ static void __exit simple_cleanup(void)
   // Unregister the device
   int i;
   for (i = 0; i < 257; i++) {
-    free_msgslot(index);
+    free_msgslot(i);
   }
   // Should always succeed
   unregister_chrdev(MAJOR_NUM, DEVICE_RANGE_NAME);
